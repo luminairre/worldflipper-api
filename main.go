@@ -64,8 +64,7 @@ func lookup(w http.ResponseWriter, r *http.Request) {
 			log.Fatalf("Unable to read client secret file: %v", err)
 		}
 		fmt.Println("connected")
-		//db.Where("en_name LIKE ?","%" + name + "%").Find(&char)
-		db.Where("en_name LIKE ?","%" + name + "% or " + name + " = ANY(characters.nicknames)").Find(&char)
+		db.Where( "'" + name + "'" +  " = ANY(characters.nicknames)").Or("en_name LIKE ?", "%" + name + "%").Find(&char)
 		defer db.Close()
 	}
 	enc := json.NewEncoder(w)
