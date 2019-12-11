@@ -46,7 +46,7 @@ func main() {
 
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/lookup", lookup).Methods("GET", "OPTIONS")
-	log.Fatal(http.ListenAndServe(":8082", router))
+	log.Fatal(http.ListenAndServe(":" + os.Getenv("PORT"), router))
 }
 
 func lookup(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +64,7 @@ func lookup(w http.ResponseWriter, r *http.Request) {
 			log.Fatalf("Unable to read client secret file: %v", err)
 		}
 		fmt.Println("connected")
-		db.Where("en_name LIKE ?", name + "%").Find(&char)
+		db.Where("en_name LIKE ?","%" + name + "%").Find(&char)
 		defer db.Close()
 	}
 	enc := json.NewEncoder(w)
