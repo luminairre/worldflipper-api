@@ -39,6 +39,7 @@ type Character struct {
 	SkillTypeIconUrl string
 	SpriteURL        string
 	GifURL           string
+	Nicknames		[]string
 }
 var db_url string
 func main() {
@@ -64,7 +65,7 @@ func lookup(w http.ResponseWriter, r *http.Request) {
 			log.Fatalf("Unable to read client secret file: %v", err)
 		}
 		fmt.Println("connected")
-		db.Where( "'" + name + "'" +  " = ANY(characters.nicknames)").Or("en_name LIKE ?", "%" + name + "%").Find(&char)
+		db.Where( "'" + name + "'" +  " = ANY(characters.nicknames)").Or("en_name LIKE ?", "%" + name + "%").Or("jp_name LIKE ?", "%" + name + "%").Find(&char)
 		defer db.Close()
 	}
 	enc := json.NewEncoder(w)
