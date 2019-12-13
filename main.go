@@ -3,14 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"log"
 	"net/http"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"os"
 	"strings"
-
-	"github.com/gorilla/mux"
 )
 
 type Character struct {
@@ -69,10 +68,9 @@ func lookup(w http.ResponseWriter, r *http.Request) {
 		db.Where( "'" + name + "'" +  " = ANY(characters.nicknames)").Or("en_name LIKE ?", "%" + name + "%").Or("jp_name LIKE ?", "%" + name + "%").Find(&char)
 		defer db.Close()
 	}
-	for _, i := range char {
-		i.Nicknames = strings.ReplaceAll(i.Nicknames, "{", "[")
-		i.Nicknames = strings.ReplaceAll(i.Nicknames, "}", "]")
-
+	for i, _ := range char {
+		char[i].Nicknames = strings.ReplaceAll(char[i].Nicknames, "{", "[")
+		char[i].Nicknames = strings.ReplaceAll(char[i].Nicknames, "}", "]")
 	}
 	enc := json.NewEncoder(w)
 	enc.Encode(char)
