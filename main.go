@@ -8,6 +8,7 @@ import (
 	"net/http"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -39,7 +40,7 @@ type Character struct {
 	SkillTypeIconUrl string
 	SpriteURL        string
 	GifURL           string
-	Nicknames		[]string
+	Nicknames		string
 }
 var db_url string
 func main() {
@@ -67,6 +68,11 @@ func lookup(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("connected")
 		db.Where( "'" + name + "'" +  " = ANY(characters.nicknames)").Or("en_name LIKE ?", "%" + name + "%").Or("jp_name LIKE ?", "%" + name + "%").Find(&char)
 		defer db.Close()
+	}
+	for _, i := range char {
+		i.Nicknames = strings.ReplaceAll(i.Nicknames, "{", "[")
+		i.Nicknames = strings.ReplaceAll(i.Nicknames, "}", "]")
+
 	}
 	enc := json.NewEncoder(w)
 	enc.Encode(char)
