@@ -120,7 +120,7 @@ where (cv.version_id in
            or '` + name + `' = ANY (c.nicknames)
        ));`
 
-		db.Raw(query).Scan(&char)
+		db.Raw(query).Scan(&char.Matches)
 
 		fmt.Println(len(char.Matches))
 		if len(char.Matches) == 0 {
