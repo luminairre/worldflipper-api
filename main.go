@@ -47,6 +47,10 @@ type exactCharacter struct {
 	Alts []Character `json:"versions"`
 }
 
+type searchMatches struct {
+	Matches []Character `json:"matches"`
+}
+
 var db_url string
 
 func main() {
@@ -88,7 +92,7 @@ func lookup2(w http.ResponseWriter, r *http.Request) {
 	names, ok := vals["name"]
 	name := names[0]
 	fmt.Println("name:" + name)
-	var char []Character
+	var char searchMatches
 	var exactMatch exactCharacter
 	exact := true
 	// psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
@@ -119,8 +123,8 @@ where (cv.version_id in
 
 		db.Raw(query).Scan(&char)
 
-		fmt.Println(len(char))
-		if len(char) == 0 {
+		fmt.Println(len(char.Matches))
+		if len(char.Matches) == 0 {
 			exact = false
 			db.Where("'"+name+"'"+" = ANY(characters.nicknames)").Or("en_name LIKE ?", "%"+name+"%").Or("jp_name LIKE ?", "%"+name+"%").Find(&char)
 		}
@@ -128,16 +132,16 @@ where (cv.version_id in
 		defer db.Close()
 	}
 
-	for i, _ := range char {
-		char[i].Nicknames = strings.ReplaceAll(char[i].Nicknames, "{", "[")
-		char[i].Nicknames = strings.ReplaceAll(char[i].Nicknames, "}", "]")
+	for i, _ := range char.Matches {
+		char.Matches[i].Nicknames = strings.ReplaceAll(char.Matches[i].Nicknames, "{", "[")
+		char.Matches[i].Nicknames = strings.ReplaceAll(char.Matches[i].Nicknames, "}", "]")
 	}
 	if exact {
-		for i, _ := range char {
-			if strings.ToLower(char[i].EnName) == name {
-				exactMatch.Main = char[i]
+		for i, _ := range char.Matches {
+			if strings.ToLower(char.Matches[i].EnName) == name {
+				exactMatch.Main = char.Matches[i]
 			}
-			exactMatch.Alts = append(exactMatch.Alts, char[i])
+			exactMatch.Alts = append(exactMatch.Alts, char.Matches[i])
 		}
 		enc := json.NewEncoder(w)
 		enc.Encode(exactMatch)
