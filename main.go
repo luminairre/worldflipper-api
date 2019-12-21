@@ -100,7 +100,6 @@ func lookup2(w http.ResponseWriter, r *http.Request) {
 	// 	host, port, user, password, dbname, sslmode)
 	if ok {
 		db, err := gorm.Open("postgres", db_url)
-		db.LogMode(true)
 
 		if err != nil {
 			fmt.Println("failed")
@@ -126,7 +125,7 @@ where (cv.version_id in
 		fmt.Println(len(char.Matches))
 		if len(char.Matches) == 0 {
 			exact = false
-			db.Where("'"+name+"'"+" = ANY(characters.nicknames)").Or("en_name LIKE ?", "%"+name+"%").Or("jp_name LIKE ?", "%"+name+"%").Find(&char)
+			db.Where("'"+name+"'"+" = ANY(characters.nicknames)").Or("en_name LIKE ?", "%"+name+"%").Or("jp_name LIKE ?", "%"+name+"%").Find(&char.Matches)
 		}
 
 		defer db.Close()
