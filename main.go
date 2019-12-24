@@ -126,6 +126,10 @@ where (cv.version_id in
 			exact = false
 			db.Where("'"+name+"'"+" = ANY(characters.nicknames)").Or("en_name LIKE ?", "%"+name+"%").Or("jp_name LIKE ?", "%"+name+"%").Find(&char.Matches)
 		}
+		if len(char.Matches) == 1 {
+			exact = true
+			exactMatch.Main = char.Matches[0]
+		}
 
 		defer db.Close()
 	}
