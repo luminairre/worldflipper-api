@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -56,8 +57,9 @@ var db_url string
 func main() {
 	db_url = os.Getenv("DATABASE_URL")
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/lookup", lookup).Methods("GET", "OPTIONS")
-	router.HandleFunc("/lookup1.1", lookup2).Methods("GET", "OPTIONS")
+	s := router.PathPrefix("/api").Subrouter()
+	s.HandleFunc("/v1/lookup", lookup).Methods("GET", "OPTIONS")
+	s.HandleFunc("/v2/lookup", lookup2).Methods("GET", "OPTIONS")
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
 }
 
@@ -139,6 +141,15 @@ where (cv.version_id in
 		for i, _ := range char.Matches {
 			if strings.ToLower(char.Matches[i].EnName) == name {
 				exactMatch.Main = char.Matches[i]
+			}
+			r := regexp.MustCompile(`[^\s"',\]\[]+|'([^']*)|"([^,]*)"|'([^]]*)|'([^[]*)`)
+			nicks := r.FindAllString(char.Matches[i].Nicknames, -1)
+			for _, k := range nicks {
+				k = strings.ReplaceAll(k, `"`, "")
+				fmt.Println(k)
+				if strings.ToLower(k) == name {
+					exactMatch.Main = char.Matches[i]
+				}
 			}
 			exactMatch.Alts = append(exactMatch.Alts, char.Matches[i])
 		}
