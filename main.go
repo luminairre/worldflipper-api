@@ -68,7 +68,6 @@ func lookup(w http.ResponseWriter, r *http.Request) {
 	names, ok := vals["name"]
 	name := names[0]
 	var char []Character
-	fmt.Println("name:" + name)
 
 	if ok {
 		db, err := gorm.Open("postgres", db_url)
@@ -93,11 +92,10 @@ func lookup2(w http.ResponseWriter, r *http.Request) {
 	vals := r.URL.Query()
 	names, ok := vals["name"]
 	name := names[0]
-	fmt.Println("name:" + name)
 	var char searchMatches
 	var exactMatch exactCharacter
 	exact := true
-	// psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+	// db_url = fmt.Sprintf("host=%s port=%d user=%s "+
 	// 	"password=%s dbname=%s sslmode=%s",
 	// 	host, port, user, password, dbname, sslmode)
 	if ok {
@@ -124,7 +122,6 @@ where (cv.version_id in
 
 		db.Raw(query).Scan(&char.Matches)
 
-		fmt.Println(len(char.Matches))
 		if len(char.Matches) == 0 {
 			exact = false
 			db.Where("'"+name+"'"+" = ANY(characters.nicknames)").Or("en_name LIKE ?", "%"+name+"%").Or("jp_name LIKE ?", "%"+name+"%").Find(&char.Matches)
@@ -133,26 +130,24 @@ where (cv.version_id in
 		defer db.Close()
 	}
 
-	for i, _ := range char.Matches {
+	for i := range char.Matches {
 		char.Matches[i].Nicknames = strings.ReplaceAll(char.Matches[i].Nicknames, "{", "[")
 		char.Matches[i].Nicknames = strings.ReplaceAll(char.Matches[i].Nicknames, "}", "]")
-	}
-	if exact {
-		for i, _ := range char.Matches {
-			if strings.ToLower(char.Matches[i].EnName) == name {
+
+		if strings.ToLower(char.Matches[i].EnName) == name {
+			exactMatch.Main = char.Matches[i]
+		}
+		r := regexp.MustCompile(`[^\s"',\]\[]+|'([^']*)|"([^,]*)"|'([^]]*)|'([^[]*)`)
+		nicks := r.FindAllString(char.Matches[i].Nicknames, -1)
+		for _, k := range nicks {
+			k = strings.ReplaceAll(k, `"`, "")
+			if strings.ToLower(k) == name {
 				exactMatch.Main = char.Matches[i]
 			}
-			r := regexp.MustCompile(`[^\s"',\]\[]+|'([^']*)|"([^,]*)"|'([^]]*)|'([^[]*)`)
-			nicks := r.FindAllString(char.Matches[i].Nicknames, -1)
-			for _, k := range nicks {
-				k = strings.ReplaceAll(k, `"`, "")
-				fmt.Println(k)
-				if strings.ToLower(k) == name {
-					exactMatch.Main = char.Matches[i]
-				}
-			}
-			exactMatch.Alts = append(exactMatch.Alts, char.Matches[i])
 		}
+		exactMatch.Alts = append(exactMatch.Alts, char.Matches[i])
+	}
+	if exact {
 		enc := json.NewEncoder(w)
 		enc.Encode(exactMatch)
 	} else {
